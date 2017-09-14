@@ -10,20 +10,15 @@ program.version('0.0.1');
 program.command('topic')
   .option('-t, --topic', 'Notification topic')
   .description('Send notification by topic')
-  .action(function() {
-    console.log('topic command');
+  .action(function(opts) {
+    console.log('topic command. topic=%s', opts);
   });
-  // .command('token [options]', 'Send to an fcm token')
-  // .action(function(cmd) {
-  //   console.log('fcm_token: %s, cmd: %s',
-  //       program.fcm_token, cmd);
-  // })
 
-program.command('single')
-  .option('-f, --fcm_token', 'Destination FCM token ')
+program.command('device')
+  .option('-t, --token <token>', 'Destination FCM token ')
   .description('Send notification to a single device')
-  .action(function() {
-      console.log('single command');
+  .action(function(opts) {
+      console.log('single command. token=%s', opts.token);
   });
 
 program.command('*')
