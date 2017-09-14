@@ -31,8 +31,13 @@ var payload = {
 function sendTopicNotification(params) {
   console.log("sendToTopic: msg=[%s], params=[%s]", params.message, params.topic);
 
-  // sanitize topic by adding the required base qualifier
-  params.topic = "/topics/" + params.topic;
+  if (!params.topic) {
+    params.topic = "/topics/news";
+  } else {
+    // sanitize topic by adding the required base qualifier
+    params.topic = "/topics/" + params.topic;
+  }
+
 
   // Send a message to devices subscribed to the provided topic.
   admin.messaging().sendToTopic(params.topic, payload)
