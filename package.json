@@ -1,0 +1,17 @@
+{
+  "name": "noti-fire",
+  "version": "0.0.1",
+  "description": "Firebase Admin Notifier",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Barry Sia",
+  "license": "ISC",
+  "bin": {
+    "noti-fire": "./index.js"
+  },
+  "dependencies": {
+    "commander": "^2.11.0"
+  }
+}
