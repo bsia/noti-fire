@@ -2,6 +2,7 @@
 
 var program = require('commander');
 
+var notifire = require('./notifire');
 
 program.usage('<cmd>');
 
@@ -11,6 +12,7 @@ program.command('topic')
   .option('-t, --topic', 'Notification topic')
   .description('Send notification by topic')
   .action(function(opts) {
+    console.log('notifire.sendToTopic = %s', typeof notifire.sendToTopic);
     console.log('topic command. topic=%s', opts);
   });
 
@@ -19,6 +21,7 @@ program.command('device')
   .description('Send notification to a single device')
   .action(function(opts) {
       console.log('single command. token=%s', opts.token);
+
   });
 
 program.command('*')
