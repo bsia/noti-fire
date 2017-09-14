@@ -8,12 +8,19 @@ program.usage('<cmd>');
 
 program.version('0.0.1');
 
+// global options, to be accessed using "program" object
+program.option('-m, --message <message>', 'Message to send');
+
 program.command('topic')
-  .option('-t, --topic', 'Notification topic')
+  .option('-t, --topic [topic]', 'Notification topic ("news" by default)')
   .description('Send notification by topic')
   .action(function(opts) {
-    console.log('notifire.sendToTopic = %s', typeof notifire.sendToTopic);
-    console.log('topic command. topic=%s', opts);
+    console.log('notifire.sendTopicNotification = %s', typeof notifire.sendTopicNotification);
+    console.log('topic command. message=%s', program.message);
+    params = {};
+    // merges program arguments and command-specific opts
+    Object.assign(params, program, opts);
+    notifire.sendTopicNotification(params);
   });
 
 program.command('device')
@@ -21,7 +28,12 @@ program.command('device')
   .description('Send notification to a single device')
   .action(function(opts) {
       console.log('single command. token=%s', opts.token);
-
+      console.log('single command. message=%s', program.message);
+      params = {};
+      // merges program arguments and command-specific opts
+      console.log('single command. message=%s', params.message);
+      Object.assign(params, program, opts);
+      notifire.sendDeviceNotification(params);
   });
 
 program.command('*')

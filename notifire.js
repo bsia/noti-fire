@@ -73,11 +73,12 @@ function sendNotificationMessage(params, exitFunction) {
     }
 
     console.log("Sending Message " + current_count);
+    console.log("sendNotificationMessage - message type=%s", params.message)
 
     var payload = {
         notification: {
             title: "Message #" + current_count,
-            body: "I got that sunshine in my pocket..."
+            body: params.message
         }
     };
 
