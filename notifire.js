@@ -50,22 +50,54 @@ function sendTopicNotification(params) {
       console.log("Error sending message:", error);
   });
 
-  params.count = 3;
+  params.count = 1;
   params.current_count = 0;
-  sendNotificationMessage(params, function() {
-    console.log("Sent all messages. Exiting...");
-    process.exit(0);
-  })
+  sendNotificationMessage(
+    params,
+    // specific message function
+    function(params, payload) {
+      return admin.messaging().sendToTopic(params.topic, payload);
+    },
+    // exit function:
+    function() {
+      console.log("Sent all messages. Exiting...");
+      process.exit(0);
+    });
 }
 
-function sendDeviceNotification(msg, params) {
+function sendDeviceNotification(params) {
+  console.log("sendDeviceNotification: msg=[%s], token=[%s]", params.message, params.token);
 
+  // Send a message to devices subscribed to the provided topic.
+  admin.messaging().sendToDevice(params.token, payload)
+      .then(function(response) {
+          // See the MessagingTopicResponse reference documentation for the
+          // contents of response.
+          console.log("Successfully sent start message", response);
+      })
+  .catch(function(error) {
+      console.log("Error sending message:", error);
+  });
+
+  params.count = 3;
+  params.current_count = 0;
+  sendNotificationMessage(
+    params,
+    // notifyFunction:
+    function(params, payload) {
+      return admin.messaging().sendToDevice(params.token, payload);
+    },
+    // exitFunction:
+    function() {
+      console.log("Sent all messages. Exiting...");
+      process.exit(0);
+    });
 }
 
 var sleep = require('sleep');
 var delayed = require('delayed');
 
-function sendNotificationMessage(params, exitFunction) {
+function sendNotificationMessage(params, notifyFunction, exitFunction) {
     current_count = params.current_count;
     if (current_count > params.count) {
         exitFunction();
@@ -82,14 +114,15 @@ function sendNotificationMessage(params, exitFunction) {
         }
     };
 
+    // The notifyFunction could be different depending on the notification type
+    notifyFunction(params, payload)
     // Send a message to devices subscribed to the provided topic.
-    admin.messaging().sendToTopic(params.topic, payload)
         .then(function(response) {
             // See the MessagingTopicResponse reference documentation for the
             // contents of response.
             console.log("Successfully sent message:", response);
             params.current_count = params.current_count + 1
-            delayed.delay(sendNotificationMessage, 1000, {}, params, exitFunction);
+            delayed.delay(sendNotificationMessage, 1000, {}, params, notifyFunction, exitFunction);
         })
     .catch(function(error) {
         console.log("Error sending message:", error);

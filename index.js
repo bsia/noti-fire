@@ -31,7 +31,6 @@ program.command('device')
       console.log('single command. message=%s', program.message);
       params = {};
       // merges program arguments and command-specific opts
-      console.log('single command. message=%s', params.message);
       Object.assign(params, program, opts);
       notifire.sendDeviceNotification(params);
   });
