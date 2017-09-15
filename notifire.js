@@ -8,6 +8,7 @@ var sleep = require('sleep');
 var delayed = require('delayed');
 var util = require('util');
 var fs = require('fs');
+var path = require('path');
 
 function initialize(context) {
   var accountFile = context.account;
@@ -18,7 +19,7 @@ function initialize(context) {
   }
 
   console.log("Service account file=[%s]", accountFile);
-  var serviceAccount = require(accountFile);
+  var serviceAccount = require(path.resolve( __dirname, accountFile));
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
