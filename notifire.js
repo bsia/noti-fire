@@ -21,13 +21,6 @@ function initFirebaseAdmin() {
 function sendTopicNotification(params) {
   console.log("sendToTopic: msg=[%s], params=[%s]", params.message, params.topic);
 
-  if (!params.topic) {
-    params.topic = "/topics/news";
-  } else {
-    // sanitize topic by adding the required base qualifier
-    params.topic = "/topics/" + params.topic;
-  }
-
   sanitizeArgs(params);
 
   // Send a message to devices subscribed to the provided topic.
@@ -117,6 +110,14 @@ function sendNotificationMessage(params, notifyFunction, exitFunction) {
 }
 
 function sanitizeArgs(params) {
+
+  if (!params.topic) {
+    params.topic = "/topics/news";
+  } else {
+    // sanitize topic by adding the required base qualifier
+    params.topic = "/topics/" + params.topic;
+  }
+
   if (!params.count) {
     console.log("Count is invalid!");
     process.exit();
