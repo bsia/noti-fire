@@ -9,8 +9,8 @@ var delayed = require('delayed');
 var util = require('util');
 var fs = require('fs');
 
-function initialize(params) {
-  var accountFile = params.account;
+function initialize(context) {
+  var accountFile = context.account;
 
   if (!fs.existsSync(accountFile)) {
     console.log("Service account file not exist. Using default...");
@@ -25,16 +25,18 @@ function initialize(params) {
     // databaseURL: "https://example-messaging.firebaseio.com"
   });
 
-  sanitizeArgs(params);
+  sanitizeArgs(context);
+
+  context.current_count = 1;
 }
 
-function sendTopicNotification(params) {
-  console.log("sendToTopic: msg=[%s], params=[%s]", params.message, params.topic);
+function sendTopicNotification(context) {
+  console.log("sendToTopic: msg=[%s], context=[%s]", context.message, context.topic);
 
-  initialize(params);
+  initialize(context);
 
   // Send a message to devices subscribed to the provided topic.
-  admin.messaging().sendToTopic(params.topic, START_NOTIFY_MARKER)
+  admin.messaging().sendToTopic(context.topic, getStartNotifyMarker(context.count))
       .then(function(response) {
           // See the MessagingTopicResponse reference documentation for the
           // contents of response.
@@ -44,12 +46,11 @@ function sendTopicNotification(params) {
       console.log("Error sending message:", error);
   });
 
-  params.current_count = 0;
   sendNotificationMessage(
-    params,
+    context,
     // specific message function
-    function(params, payload) {
-      return admin.messaging().sendToTopic(params.topic, payload);
+    function(context, payload) {
+      return admin.messaging().sendToTopic(context.topic, payload);
     },
     // exit function:
     function() {
@@ -58,21 +59,19 @@ function sendTopicNotification(params) {
     });
 }
 
-function sendDeviceNotification(params) {
-  console.log("sendDeviceNotification: msg=[%s], token=[%s]", params.message, params.token);
+function sendDeviceNotification(context) {
+  console.log("sendDeviceNotification: msg=[%s], token=[%s]", context.message, context.token);
 
-  initialize(params);
+  initialize(context);
 
   // Send a start message marker
-  admin.messaging().sendToDevice(params.token, getStartNotifyMarker(params.count))
+  admin.messaging().sendToDevice(context.token, getStartNotifyMarker(context.count))
       .then(function(response) {
-
-          params.current_count = 1;
           sendNotificationMessage(
-            params,
+            context,
             // notifyFunction:
-            function(params, payload) {
-              return admin.messaging().sendToDevice(params.token, payload);
+            function(context, payload) {
+              return admin.messaging().sendToDevice(context.token, payload);
             },
             // exitFunction:
             function() {
@@ -87,58 +86,58 @@ function sendDeviceNotification(params) {
 
 }
 
-function sendNotificationMessage(params, notifyFunction, exitFunction) {
-    current_count = params.current_count;
-    if (current_count > params.count) {
+function sendNotificationMessage(context, notifyFunction, exitFunction) {
+    current_count = context.current_count;
+    if (current_count > context.count) {
         exitFunction();
         return;
     }
 
-    console.log("Sending Message " + current_count);
-    console.log("sendNotificationMessage - message type=%s", params.message)
+    console.log("sendNotificationMessage: count=[%d]", current_count);
 
     var payload = {
         notification: {
             title: "Message #" + current_count,
-            body: params.message
+            body: context.message
         }
     };
 
     // The notifyFunction could be different depending on the notification type
-    notifyFunction(params, payload)
+    notifyFunction(context, payload)
     // Send a message to devices subscribed to the provided topic.
         .then(function(response) {
             // See the MessagingTopicResponse reference documentation for the
             // contents of response.
-            console.log("Successfully sent message:", response);
-            params.current_count = params.current_count + 1
-            delayed.delay(sendNotificationMessage, 1000, {}, params, notifyFunction, exitFunction);
+            console.log("sendNotificationMessage: Successfully sent message #" + current_count);
+            console.log("sendNotificationMessage: message=%s", context.message)
+            console.log("sendNotificationMessage: response: ", response);
+            context.current_count = context.current_count + 1
+            delayed.delay(sendNotificationMessage, 1000, {}, context, notifyFunction, exitFunction);
         })
     .catch(function(error) {
         console.log("Error sending message:", error);
     });
 }
 
-function sanitizeArgs(params) {
+function sanitizeArgs(context) {
 
-  if (!params.topic) {
-    params.topic = "/topics/news";
+  if (!context.topic) {
+    context.topic = "/topics/news";
   } else {
     // sanitize topic by adding the required base qualifier
-    params.topic = "/topics/" + params.topic;
+    context.topic = "/topics/" + context.topic;
   }
 
-  if (!params.count) {
-    console.log("Count is invalid!");
-    process.exit();
-  }
+  // if (!context.count) {
+  //   console.log("Count is invalid!");
+  // }
 
-  params.count = parseInt(params.count);
+  context.count = parseInt(context.count);
 
-  if (params.count !== params.count) {
+  if (context.count !== context.count) {
     console.log("Count is not a number.  Setting to default (1).");
     // setting count to default value
-    params.count = 1;
+    context.count = 1;
   }
 }
 
