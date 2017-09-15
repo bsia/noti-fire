@@ -4,7 +4,7 @@ var program = require('commander');
 
 var notifire = require('./notifire');
 
-program.usage('<cmd>');
+program.usage('<cmd> [options]');
 
 program.version('0.0.1');
 
