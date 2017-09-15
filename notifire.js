@@ -7,21 +7,31 @@ var admin = require("firebase-admin");
 var sleep = require('sleep');
 var delayed = require('delayed');
 var util = require('util');
+var fs = require('fs');
 
+function initialize(params) {
+  var accountFile = params.account;
 
-function initFirebaseAdmin() {
-  var serviceAccount = require("./firebase-adminsdk-services.json");
+  if (!fs.existsSync(accountFile)) {
+    console.log("Service account file not exist. Using default...");
+    accountFile = "./firebase-adminsdk-services.json";
+  }
+
+  console.log("Service account file=[%s]", accountFile);
+  var serviceAccount = require(accountFile);
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     // databaseURL: "https://example-messaging.firebaseio.com"
   });
+
+  sanitizeArgs(params);
 }
 
 function sendTopicNotification(params) {
   console.log("sendToTopic: msg=[%s], params=[%s]", params.message, params.topic);
 
-  sanitizeArgs(params);
+  initialize(params);
 
   // Send a message to devices subscribed to the provided topic.
   admin.messaging().sendToTopic(params.topic, START_NOTIFY_MARKER)
@@ -51,7 +61,7 @@ function sendTopicNotification(params) {
 function sendDeviceNotification(params) {
   console.log("sendDeviceNotification: msg=[%s], token=[%s]", params.message, params.token);
 
-  sanitizeArgs(params);
+  initialize(params);
 
   // Send a start message marker
   admin.messaging().sendToDevice(params.token, getStartNotifyMarker(params.count))
@@ -142,5 +152,3 @@ function getStartNotifyMarker(expectedCount) {
   };
 
 }
-
-initFirebaseAdmin();
