@@ -11,6 +11,8 @@ may work but were not tested.
 * node v8.5.0
 * npm v5.3.0
 
+It is recommended to use nvm to install node to be able to more easily manage the various installed node versions.
+
 ### Steps
 
 Follow shell commands below for setup instructions:
