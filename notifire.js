@@ -4,29 +4,19 @@ module.exports = {
 };
 
 var admin = require("firebase-admin");
+var sleep = require('sleep');
+var delayed = require('delayed');
+var util = require('util');
 
-var serviceAccount = require("./firebase-adminsdk-services.json");
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  // databaseURL: "https://example-messaging.firebaseio.com"
-});
+function initFirebaseAdmin() {
+  var serviceAccount = require("./firebase-adminsdk-services.json");
 
-// See the "Defining the message payload" section below for details
-// on how to define a message payload.
-var payload1 = {
-  data: {
-    score: "850",
-    time: "2:45"
-  }
-};
-
-var payload = {
-    notification: {
-        title: "Start New Batch",
-        body:  "==============="
-    }
-};
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    // databaseURL: "https://example-messaging.firebaseio.com"
+  });
+}
 
 function sendTopicNotification(params) {
   console.log("sendToTopic: msg=[%s], params=[%s]", params.message, params.topic);
@@ -38,9 +28,10 @@ function sendTopicNotification(params) {
     params.topic = "/topics/" + params.topic;
   }
 
+  sanitizeArgs(params);
 
   // Send a message to devices subscribed to the provided topic.
-  admin.messaging().sendToTopic(params.topic, payload)
+  admin.messaging().sendToTopic(params.topic, START_NOTIFY_MARKER)
       .then(function(response) {
           // See the MessagingTopicResponse reference documentation for the
           // contents of response.
@@ -50,7 +41,6 @@ function sendTopicNotification(params) {
       console.log("Error sending message:", error);
   });
 
-  params.count = 1;
   params.current_count = 0;
   sendNotificationMessage(
     params,
@@ -68,34 +58,31 @@ function sendTopicNotification(params) {
 function sendDeviceNotification(params) {
   console.log("sendDeviceNotification: msg=[%s], token=[%s]", params.message, params.token);
 
-  // Send a message to devices subscribed to the provided topic.
-  admin.messaging().sendToDevice(params.token, payload)
+  sanitizeArgs(params);
+
+  // Send a start message marker
+  admin.messaging().sendToDevice(params.token, getStartNotifyMarker(params.count))
       .then(function(response) {
-          // See the MessagingTopicResponse reference documentation for the
-          // contents of response.
-          console.log("Successfully sent start message", response);
+
+          params.current_count = 1;
+          sendNotificationMessage(
+            params,
+            // notifyFunction:
+            function(params, payload) {
+              return admin.messaging().sendToDevice(params.token, payload);
+            },
+            // exitFunction:
+            function() {
+              console.log("Sent all messages. Exiting...");
+              process.exit(0);
+            });
       })
   .catch(function(error) {
       console.log("Error sending message:", error);
   });
 
-  params.count = 3;
-  params.current_count = 0;
-  sendNotificationMessage(
-    params,
-    // notifyFunction:
-    function(params, payload) {
-      return admin.messaging().sendToDevice(params.token, payload);
-    },
-    // exitFunction:
-    function() {
-      console.log("Sent all messages. Exiting...");
-      process.exit(0);
-    });
-}
 
-var sleep = require('sleep');
-var delayed = require('delayed');
+}
 
 function sendNotificationMessage(params, notifyFunction, exitFunction) {
     current_count = params.current_count;
@@ -128,3 +115,31 @@ function sendNotificationMessage(params, notifyFunction, exitFunction) {
         console.log("Error sending message:", error);
     });
 }
+
+function sanitizeArgs(params) {
+  if (!params.count) {
+    console.log("Count is invalid!");
+    process.exit();
+  }
+
+  params.count = parseInt(params.count);
+
+  if (params.count !== params.count) {
+    console.log("Count is not a number.  Setting to default (1).");
+    // setting count to default value
+    params.count = 1;
+  }
+}
+
+function getStartNotifyMarker(expectedCount) {
+  var body = util.format("Expected Messages: %d", expectedCount);
+  return {
+      notification: {
+          title: "Start New Batch",
+          body: body
+      }
+  };
+
+}
+
+initFirebaseAdmin();

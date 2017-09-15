@@ -10,6 +10,7 @@ program.version('0.0.1');
 
 // global options, to be accessed using "program" object
 program.option('-m, --message <message>', 'Message to send');
+program.option('-c, --count <count>', 'Number of notifications to send');
 
 program.command('topic')
   .option('-t, --topic [topic]', 'Notification topic ("news" by default)')
@@ -29,6 +30,7 @@ program.command('device')
   .action(function(opts) {
       console.log('single command. token=%s', opts.token);
       console.log('single command. message=%s', program.message);
+      console.log('single command. count=%d', program.count);
       params = {};
       // merges program arguments and command-specific opts
       Object.assign(params, program, opts);
